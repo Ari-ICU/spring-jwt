@@ -20,7 +20,7 @@ jobs:
           - 5432:5432
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: jfrog123
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: bookstore
         options: >-
           --health-cmd="pg_isready -U postgres"
@@ -31,7 +31,7 @@ jobs:
     env:
       SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/bookstore
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: jfrog123
+      SPRING_DATASOURCE_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
 
     steps:
       - name: Checkout Repository

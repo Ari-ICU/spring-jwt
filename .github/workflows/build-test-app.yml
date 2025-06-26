@@ -1,4 +1,4 @@
-name: Java CI with Gradle
+name: Java CI with Gradle and Docker
 
 on:
   push:
@@ -33,21 +33,6 @@ jobs:
       - name: Build with Gradle Wrapper
         run: ./gradlew build
 
-  dependency-submission:
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Generate and submit dependency graph
-        uses: gradle/actions/dependency-submission@v4
+      - name: Docker Build (Only Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: docker build -t my-app:latest .

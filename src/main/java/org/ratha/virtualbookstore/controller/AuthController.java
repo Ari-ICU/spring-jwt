@@ -1,5 +1,6 @@
 package org.ratha.virtualbookstore.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.ratha.virtualbookstore.DTO.request.AuthRequest;
 import org.ratha.virtualbookstore.DTO.respone.AuthResponse;
@@ -33,6 +34,11 @@ public class AuthController {
     private UserRepository userRepository;
 
     @PostMapping("/login")
+    @Operation(
+            summary = "User Login",
+            description = "Authenticates a user and returns a JWT token",
+            tags = {"Authentication"}
+    )
     public ResponseEntity<?> login(@RequestBody AuthRequest authRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -45,15 +51,12 @@ public class AuthController {
 
             String jwt = jwtUtil.generateToken(user.getUsername(), user.getRole());
 
-            Map<String, Object> data = new HashMap<>();
-            data.put("token", jwt);
-            data.put("username", user.getUsername());
-            data.put("role", user.getRole());
+            // Use AuthResponse DTO
+            AuthResponse authResponse = new AuthResponse(jwt, user.getUsername(), user.getRole());
 
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
-            response.put("data", data);
-
+            response.put("data", authResponse);
 
             return ResponseEntity.ok(response);
 
@@ -67,9 +70,13 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
+    @Operation(
+            summary = "User Logout",
+            description = "Logs out the current user and clears the security context",
+            tags = {"Authentication"}
+    )
     public ResponseEntity<?> logout() {
-
+        SecurityContextHolder.clearContext(); // Clear security context for proper logout
         return ResponseEntity.ok(Map.of("status", "success", "message", "Logged out successfully"));
     }
-
 }

@@ -1,5 +1,10 @@
-package org.ratha.virtualbookstore.DTO.respone;
+package org.ratha.virtualbookstore.DTO.response;
 
+
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(hidden = true)
 public class AuthResponse {
     private String token;
     private String username;

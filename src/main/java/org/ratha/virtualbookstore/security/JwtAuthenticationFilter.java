@@ -30,6 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // Skip JWT validation for public routes and Swagger
         if (path.startsWith("/api/auth/") ||
+                path.startsWith("/api/") ||
                 path.startsWith("/swagger-ui/") ||
                 path.startsWith("/v3/api-docs") ||
                 path.startsWith("/swagger-ui.html")) {

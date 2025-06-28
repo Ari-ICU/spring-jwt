@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   virtualbookstore:
-    image: virtualbookstore
+    build: .
     ports:
       - "8000:8000"
     environment:
@@ -27,6 +27,7 @@ services:
 
 volumes:
   db_data:
+
 
 networks:
   app-network:

@@ -3,8 +3,13 @@ package org.ratha.virtualbookstore.repository;
 import org.ratha.virtualbookstore.model.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
     Optional<Category> findByName(String name);
+
+    List<Category> findByNameIn(List<String> requestCategoryNames);
+
+    boolean existsByName(String name);
 }

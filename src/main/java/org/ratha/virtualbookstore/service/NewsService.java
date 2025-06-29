@@ -1,5 +1,7 @@
 package org.ratha.virtualbookstore.service;
 
+import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import org.ratha.virtualbookstore.DTO.request.NewsRequestDTO;
 import org.ratha.virtualbookstore.DTO.response.NewsResponseDTO;
 import org.ratha.virtualbookstore.model.Category;
@@ -7,6 +9,7 @@ import org.ratha.virtualbookstore.model.News;
 import org.ratha.virtualbookstore.repository.CategoryRepository;
 import org.ratha.virtualbookstore.repository.NewsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -50,13 +53,13 @@ public class NewsService {
         }
     }
 
-    public List<NewsResponseDTO> createMultipleNews(List<NewsRequestDTO> newsDTOs) {
+    @Transactional
+    public List<NewsResponseDTO> createMultipleNews(@Valid List<NewsRequestDTO> newsDTOs) {
         if (newsDTOs == null || newsDTOs.isEmpty()) {
             throw new NewsServiceException("News request list cannot be null or empty");
         }
 
-        List<NewsResponseDTO> savedNewsList = new ArrayList<>();
-
+        List<News> newsList = new ArrayList<>();
         for (NewsRequestDTO newsDTO : newsDTOs) {
             // Validate title and content
             if (newsDTO.getTitle() == null || newsDTO.getTitle().trim().isEmpty()) {
@@ -66,40 +69,70 @@ public class NewsService {
                 throw new NewsServiceException("Content is required for all news articles");
             }
 
-            boolean exists = newsRepository.existsByTitle(newsDTO.getTitle().trim());
+            // Check for duplicate title (case-insensitive)
+            boolean exists = newsRepository.existsByTitleIgnoreCase(newsDTO.getTitle().trim().toLowerCase());
             if (exists) {
                 throw new NewsServiceException("A news article with the title '" + newsDTO.getTitle().trim() + "' already exists");
             }
+
             News news = new News();
             news.setTitle(newsDTO.getTitle().trim());
             news.setContent(newsDTO.getContent().trim());
             news.setPublishedDate(LocalDateTime.now());
 
-            // Save the news entity
-            News savedNews = newsRepository.save(news);
-            savedNewsList.add(convertToResponseDTO(savedNews));
+            // Handle category
+            if (newsDTO.getCategoryId() != null) {
+                Category category = categoryRepository.findById(newsDTO.getCategoryId())
+                        .orElseThrow(() -> new NewsServiceException("Category with ID " + newsDTO.getCategoryId() + " not found"));
+                news.setCategory(category);
+            }
+
+            newsList.add(news);
         }
 
-        return savedNewsList;
+        try {
+            List<News> savedNews = newsRepository.saveAll(newsList);
+            return savedNews.stream()
+                    .map(this::convertToResponseDTO)
+                    .collect(Collectors.toList());
+        } catch (DataAccessException e) {
+            throw new NewsServiceException("Failed to create news articles: " + e.getMessage());
+        }
     }
 
-
-    public NewsResponseDTO updateNews(Long id, NewsRequestDTO newsDTO) {
+    @Transactional
+    public NewsResponseDTO updateNews(Long id, @Valid NewsRequestDTO newsDTO) {
         try {
-            if (newsDTO.getTitle() == null || newsDTO.getContent() == null) {
+            if (newsDTO.getTitle() == null || newsDTO.getTitle().trim().isEmpty() ||
+                    newsDTO.getContent() == null || newsDTO.getContent().trim().isEmpty()) {
                 throw new NewsServiceException("Title and content are required");
             }
 
             News news = newsRepository.findById(id)
                     .orElseThrow(() -> new NewsServiceException("News article with ID " + id + " not found"));
 
-            news.setTitle(newsDTO.getTitle());
-            news.setContent(newsDTO.getContent());
+            // Check for duplicate title (case-insensitive), excluding the current news article
+            if (!news.getTitle().equalsIgnoreCase(newsDTO.getTitle().trim()) &&
+                    newsRepository.existsByTitleIgnoreCase(newsDTO.getTitle().trim().toLowerCase())) {
+                throw new NewsServiceException("A news article with the title '" + newsDTO.getTitle().trim() + "' already exists");
+            }
+
+            news.setTitle(newsDTO.getTitle().trim());
+            news.setContent(newsDTO.getContent().trim());
+
+            // Handle category
+            if (newsDTO.getCategoryId() != null) {
+                Category category = categoryRepository.findById(newsDTO.getCategoryId())
+                        .orElseThrow(() -> new NewsServiceException("Category with ID " + newsDTO.getCategoryId() + " not found"));
+                news.setCategory(category);
+            } else {
+                news.setCategory(null); // Allow removing category
+            }
 
             News updatedNews = newsRepository.save(news);
             return convertToResponseDTO(updatedNews);
-        } catch (Exception e) {
-            throw new NewsServiceException("Error updating news article with ID " + id + ": " + e.getMessage());
+        } catch (DataAccessException e) {
+            throw new NewsServiceException("Database error updating news article with ID " + id + ": " + e.getMessage());
         }
     }
 

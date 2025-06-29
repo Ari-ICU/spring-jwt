@@ -2,6 +2,13 @@
 FROM eclipse-temurin:17-jdk AS build
 WORKDIR /app
 COPY . .
+
+RUN chmod +x ./gradlew
+# To one of these
+RUN ./gradlew build --stacktrace
+# OR
+RUN ./gradlew build --info
+
 RUN ./gradlew build
 
 # Stage 2: Create the final image

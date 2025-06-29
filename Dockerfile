@@ -4,9 +4,7 @@ WORKDIR /app
 COPY . .
 
 RUN chmod +x ./gradlew
-# To one of these
-RUN ./gradlew build --stacktrace
-# OR
+
 RUN ./gradlew build --info
 
 RUN ./gradlew build

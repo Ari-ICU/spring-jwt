@@ -2,7 +2,7 @@
 FROM eclipse-temurin:17-jdk AS build
 WORKDIR /app
 COPY . .
-RUN ./gradlew build --no-daemon
+RUN ./gradlew build
 
 # Stage 2: Create the final image
 FROM eclipse-temurin:17-jre
